@@ -3,7 +3,7 @@
 
 function cw_createFloor() {
   var last_tile = null;
-  var tile_position = new b2Vec2(-5,0);
+  var tile_position = new b2Vec2(-5,5);
   cw_floorTiles = new Array();
   Math.seedrandom(floorseed);
   for(var k = 0; k < maxFloorTiles; k++) {

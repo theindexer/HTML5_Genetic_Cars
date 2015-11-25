@@ -2,7 +2,7 @@
 var ghost;
 
 var timeStep = 1.0 / 60.0;
-var maxFrames = 5000;
+var maxFrames = 2000;
 
 var doDraw = true;
 var cw_paused = false;
@@ -48,7 +48,7 @@ var mutation_range = 1;
 var gen_counter = 0;
 var nAttributes = 15;
 
-var gravity = new b2Vec2(0.0, -9.81);
+var gravity = new b2Vec2(0.0, 9.81);
 var doSleep = true;
 
 var world;
@@ -74,7 +74,7 @@ var wheelMinRadius = 0.2;
 var wheelMaxDensity = 100;
 var wheelMinDensity = 40;
 var minWheelCount = 1;
-var maxWheelCount = 6;
+var maxWheelCount = 5;
 
 var velocityIndex = 0;
 var deathSpeed = 0.1;
@@ -82,7 +82,7 @@ var max_car_health = box2dfps * 10;
 var car_health = max_car_health;
 
 var maxMotorSpeed = 30;
-var minMotorSpeed = 1;
+var minMotorSpeed = 2;
 
 var swapPoint1 = 0;
 var swapPoint2 = 0;
@@ -138,8 +138,10 @@ cw_Car.prototype.__constructor = function(car_def) {
   this.healthBarText = document.getElementById("health"+car_def.index).nextSibling.nextSibling;
   this.healthBarText.innerHTML = car_def.index;
   this.minimapmarker = document.getElementById("bar"+car_def.index);
+  this.gravity = new b2Vec2(0, 9.81);
 
   if(this.is_elite) {
+    this.gravity = new b2Vec2(0, -9.81);
     this.healthBar.backgroundColor = "#44c";
     this.minimapmarker.style.borderLeft = "1px solid #44c";
     this.minimapmarker.innerHTML = car_def.index;
@@ -149,11 +151,11 @@ cw_Car.prototype.__constructor = function(car_def) {
     this.minimapmarker.innerHTML = car_def.index;
   }
 
-  this.chassis = cw_createChassis(car_def.vertex_list, car_def.chassis_density);
+  this.chassis = cw_createChassis(car_def.vertex_list, car_def.chassis_density, this.gravity);
 
   this.wheels = [];
   for (var i = 0; i < car_def.wheelCount; i++){
-    this.wheels[i] = cw_createWheel(car_def.wheel_radius[i], car_def.wheel_density[i]);
+    this.wheels[i] = cw_createWheel(car_def.wheel_radius[i], car_def.wheel_density[i], this.gravity);
   }
 
   var carmass = this.chassis.GetMass();
@@ -162,7 +164,7 @@ cw_Car.prototype.__constructor = function(car_def) {
   }
   var torque = [];
   for (var i = 0; i < car_def.wheelCount; i++){
-    torque[i] = carmass * -gravity.y / car_def.wheel_radius[i];
+    torque[i] = Math.abs(carmass * this.gravity.y / car_def.wheel_radius[i]);
   }
 
   var joint_def = new b2RevoluteJointDef();
@@ -178,7 +180,11 @@ cw_Car.prototype.__constructor = function(car_def) {
     joint_def.localAnchorA.Set(randvertex.x, randvertex.y);
     joint_def.localAnchorB.Set(0, 0);
     joint_def.maxMotorTorque = torque[i];
-    joint_def.motorSpeed = -car_def.motor_speed[i];
+    var motor_multiple = 1;
+    if (this.gravity.y < 0) {
+        motor_multiple = -1;
+    }
+    joint_def.motorSpeed = motor_multiple * car_def.motor_speed[i];
     joint_def.enableMotor = true;
     joint_def.bodyA = this.chassis;
     joint_def.bodyB = this.wheels[i];
@@ -268,10 +274,15 @@ function cw_createChassisPart(body, vertex1, vertex2, density) {
   body.CreateFixture(fix_def);
 }
 
-function cw_createChassis(vertex_list, density) {
+function cw_createChassis(vertex_list, density, gravity) {
   var body_def = new b2BodyDef();
   body_def.type = b2Body.b2_dynamicBody;
-  body_def.position.Set(0.0, 4.0);
+  if (gravity.y < 0) {
+      body_def.position.Set(0.0, 20.0);
+  } else {
+      body_def.position.Set(0.0, 4.0);
+  }
+  body_def.gravity = gravity;
 
   var body = world.CreateBody(body_def);
 
@@ -289,10 +300,11 @@ function cw_createChassis(vertex_list, density) {
   return body;
 }
 
-function cw_createWheel(radius, density) {
+function cw_createWheel(radius, density, gravity) {
   var body_def = new b2BodyDef();
   body_def.type = b2Body.b2_dynamicBody;
   body_def.position.Set(0, 0);
+  body_def.gravity = gravity;
 
   var body = world.CreateBody(body_def);
 
