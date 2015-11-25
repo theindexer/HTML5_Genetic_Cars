@@ -9,7 +9,23 @@ function cw_createFloor() {
   for(var k = 0; k < maxFloorTiles; k++) {
     if (!mutable_floor) {
       // keep old impossible tracks if not using mutable floors
-      last_tile = cw_createFloorTile(tile_position, (Math.random()*3 - 1.5) * 1.5*k/maxFloorTiles);
+      var difficulty = 0.1;
+      if (k > 25) {
+        difficulty = 0.3;
+      }
+      if (k > 50) {
+        difficulty = 0.5;
+      }
+      if (k > 200) {
+        difficulty = 0.6;
+      }
+      if (k > 500) {
+        difficulty = 0.75;
+      }
+      if (k > 1000) {
+        difficulty = 0.9;
+      }
+      last_tile = cw_createFloorTile(tile_position, (Math.random()*3 - 1.5) * difficulty);
     } else {
       // if path is mutable over races, create smoother tracks
       last_tile = cw_createFloorTile(tile_position, (Math.random()*3 - 1.5) * 1.2*k/maxFloorTiles);
